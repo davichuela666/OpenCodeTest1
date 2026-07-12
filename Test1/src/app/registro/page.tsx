@@ -1,12 +1,10 @@
 'use client'
 
-// ACTUALIZACIÓN: Usamos useActionState de 'react' y useFormStatus de 'react-dom'
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
-// ACTUALIZACIÓN: Importaciones separadas para acción y esquema/tipo
 import { registerUser } from '@/lib/actions/auth'
 import { registerSchema, type RegisterFormData } from '@/lib/schemas/auth'
 
@@ -31,13 +29,8 @@ import {
 import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
 
-// Estado inicial para la Server Action
-const initialState = {
-  message: null,
-  errors: {},
-}
+const initialState: { message: string; errors?: Record<string, string[]> } = { message: '', errors: {} }
 
-// Componente para el botón de envío que muestra un spinner mientras se carga
 function SubmitButton() {
   const { pending } = useFormStatus()
 
@@ -50,18 +43,15 @@ function SubmitButton() {
 }
 
 export default function RegisterPage() {
-  // ACTUALIZACIÓN: Usamos el hook renombrado useActionState
   const [state, formAction] = useActionState(registerUser, initialState)
   
-  // Hook para manejar el formulario en el cliente
   const { register, control, watch, formState: { errors } } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      role: 'autonomo',
+      role: 'freelancer',
     }
   })
 
-  // Observamos el valor del rol para mostrar/ocultar el campo de especialidad
   const selectedRole = watch('role')
 
   return (
@@ -75,21 +65,19 @@ export default function RegisterPage() {
         </CardHeader>
         <CardContent>
           <form action={formAction} className="space-y-4">
-            {/* Rol */}
             <div className="space-y-2">
               <Label htmlFor="role">Quiero registrarme como...</Label>
               <Controller
                 name="role"
                 control={control}
                 render={({ field }) => (
-                  // CORRECCIÓN FINAL: Pasamos 'name' y 'value' explícitamente para que Radix genere el input oculto correctamente.
                   <Select name={field.name} value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="role">
                       <SelectValue placeholder="Selecciona tu rol" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="autonomo">Cámara Autónomo</SelectItem>
-                      <SelectItem value="productora">Productora / Empresa</SelectItem>
+                      <SelectItem value="freelancer">Cámara Autónomo</SelectItem>
+                      <SelectItem value="production_company">Productora / Empresa</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -98,24 +86,38 @@ export default function RegisterPage() {
               {state?.errors?.role && <p className="text-sm text-destructive">{state.errors.role[0]}</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {/* Nombre */}
-              <div className="space-y-2">
-                <Label htmlFor="first_name">Nombre</Label>
-                <Input id="first_name" {...register('first_name')} placeholder="Tu nombre" />
-                {errors.first_name && <p className="text-sm text-destructive">{errors.first_name.message}</p>}
-                {state?.errors?.first_name && <p className="text-sm text-destructive">{state.errors.first_name[0]}</p>}
+            {selectedRole === 'freelancer' ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name">Nombre</Label>
+                  <Input id="first_name" {...register('first_name')} placeholder="Tu nombre" />
+                  {errors.first_name && <p className="text-sm text-destructive">{errors.first_name.message}</p>}
+                  {state?.errors?.first_name && <p className="text-sm text-destructive">{state.errors.first_name[0]}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="last_name">Apellidos</Label>
+                  <Input id="last_name" {...register('last_name')} placeholder="Tus apellidos" />
+                  {errors.last_name && <p className="text-sm text-destructive">{errors.last_name.message}</p>}
+                  {state?.errors?.last_name && <p className="text-sm text-destructive">{state.errors.last_name[0]}</p>}
+                </div>
               </div>
-              {/* Apellidos */}
-              <div className="space-y-2">
-                <Label htmlFor="last_name">Apellidos</Label>
-                <Input id="last_name" {...register('last_name')} placeholder="Tus apellidos" />
-                {errors.last_name && <p className="text-sm text-destructive">{errors.last_name.message}</p>}
-                {state?.errors?.last_name && <p className="text-sm text-destructive">{state.errors.last_name[0]}</p>}
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name">Nombre de la Productora</Label>
+                  <Input id="first_name" {...register('first_name')} placeholder="Nombre de la empresa" />
+                  {errors.first_name && <p className="text-sm text-destructive">{errors.first_name.message}</p>}
+                  {state?.errors?.first_name && <p className="text-sm text-destructive">{state.errors.first_name[0]}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tax_id">CIF</Label>
+                  <Input id="tax_id" {...register('tax_id')} placeholder="B-12345678" />
+                  {errors.tax_id && <p className="text-sm text-destructive">{errors.tax_id.message}</p>}
+                  {state?.errors?.tax_id && <p className="text-sm text-destructive">{state.errors.tax_id[0]}</p>}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" {...register('email')} placeholder="tu@email.com" />
@@ -123,7 +125,6 @@ export default function RegisterPage() {
               {state?.errors?.email && <p className="text-sm text-destructive">{state.errors.email[0]}</p>}
             </div>
 
-            {/* Teléfono */}
             <div className="space-y-2">
               <Label htmlFor="phone">Teléfono</Label>
               <Input id="phone" type="tel" {...register('phone')} placeholder="+34 600 000 000" />
@@ -131,24 +132,31 @@ export default function RegisterPage() {
               {state?.errors?.phone && <p className="text-sm text-destructive">{state.errors.phone[0]}</p>}
             </div>
 
-            {/* Especialidad (Solo para autónomos) */}
-            {selectedRole === 'autonomo' && (
+            {selectedRole === 'production_company' && (
+              <div className="space-y-2 animate-in fade-in-50">
+                <Label htmlFor="contact_name">Nombre del Contacto Principal</Label>
+                <Input id="contact_name" {...register('contact_name')} placeholder="Nombre de la persona de contacto" />
+                {errors.contact_name && <p className="text-sm text-destructive">{errors.contact_name.message}</p>}
+                {state?.errors?.contact_name && <p className="text-sm text-destructive">{state.errors.contact_name[0]}</p>}
+              </div>
+            )}
+
+            {selectedRole === 'freelancer' && (
               <div className="space-y-2 animate-in fade-in-50">
                 <Label htmlFor="specialty">Especialidad Principal</Label>
                 <Controller
                   name="specialty"
                   control={control}
                   render={({ field }) => (
-                    // CORRECCIÓN FINAL: Pasamos 'name' y 'value' explícitamente.
                     <Select name={field.name} value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger id="specialty">
                         <SelectValue placeholder="Selecciona tu especialidad" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="camara">Cámara / Operador</SelectItem>
-                        <SelectItem value="sonido">Técnico de Sonido</SelectItem>
-                        <SelectItem value="luces">Técnico de Luces</SelectItem>
-                        <SelectItem value="otro">Otro</SelectItem>
+                        <SelectItem value="camera">Cámara / Operador</SelectItem>
+                        <SelectItem value="sound">Técnico de Sonido</SelectItem>
+                        <SelectItem value="lighting">Técnico de Luces</SelectItem>
+                        <SelectItem value="other">Otro</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -158,7 +166,6 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* Contraseña */}
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
               <Input id="password" type="password" {...register('password')} placeholder="Mínimo 6 caracteres" />
@@ -166,7 +173,6 @@ export default function RegisterPage() {
               {state?.errors?.password && <p className="text-sm text-destructive">{state.errors.password[0]}</p>}
             </div>
 
-            {/* Mensaje de error general */}
             {state?.message && (
               <p className="text-sm font-medium text-destructive text-center">{state.message}</p>
             )}
